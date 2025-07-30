@@ -56,6 +56,8 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
+New model add-on soon!
+
 ## Deployment
 - Deploy easily to [Vercel](https://vercel.com/) or your preferred platform.
 - Set all environment variables in your deployment dashboard.
