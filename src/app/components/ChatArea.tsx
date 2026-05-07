@@ -1,19 +1,13 @@
-import { Card } from "@/components/ui/card";
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useState } from "react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Helper to robustly extract text from ReactNode
 function extractTextFromReactNode(node: React.ReactNode): string {
-  if (typeof node === 'string') {
-    return node;
-  }
-  if (Array.isArray(node)) {
-    return node.map(extractTextFromReactNode).join('');
-  }
-  if (React.isValidElement(node) && node.props && node.props.children) {
+  if (typeof node === 'string') return node;
+  if (Array.isArray(node)) return node.map(extractTextFromReactNode).join('');
+  if (React.isValidElement(node) && node.props?.children) {
     return extractTextFromReactNode(node.props.children);
   }
   return '';
@@ -23,213 +17,212 @@ export type Message = {
   id: string;
   type: "user" | "ai" | "error";
   text: string;
+  attachment?: { url: string; name: string; type: string };
 };
 
-function ChatArea({ 
-  messages, 
-  streamingAI, 
+function ChatArea({
+  messages,
+  streamingAI,
   isLoading,
   chatEndRef,
-  streamingMessageId
 }: {
   messages: Message[];
   streamingAI?: string | null;
   isLoading?: boolean;
   chatEndRef?: React.RefObject<HTMLDivElement>;
-  streamingMessageId?: string | null;
 }) {
-  // Track which blockquote was copied (by message id + blockquote index)
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
 
-  // Custom blockquote renderer for ReactMarkdown
-  const BlockquoteWithCopy = useCallback(({ children, node, ...props }: any) => {
-    const { messageId, blockquoteIndex } = props;
-    const blockquoteKey = `${messageId}-bq-${blockquoteIndex}`;
-    const isCopied = copiedPrompt === blockquoteKey;
-    // Use robust text extraction for blockquotes
-    const textToCopy = extractTextFromReactNode(children).trim();
+  const CopyButton = useCallback(({
+    copyKey,
+    text,
+    className,
+  }: {
+    copyKey: string;
+    text: string;
+    className?: string;
+  }) => {
+    const isCopied = copiedPrompt === copyKey;
+
     return (
-      <blockquote
-        className="relative group"
-        tabIndex={0}
-        {...props}
+      <button
+        type="button"
+        className={cn(
+          "inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-100 sm:opacity-0 transition hover:bg-muted hover:text-foreground sm:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring",
+          className
+        )}
+        aria-label={isCopied ? 'Copied' : 'Copy'}
+        onClick={async () => {
+          if (!text) return;
+          try {
+            await navigator.clipboard.writeText(text);
+            setCopiedPrompt(copyKey);
+            setTimeout(() => setCopiedPrompt(null), 1400);
+          } catch (error) {
+            console.error('Failed to copy text:', error);
+          }
+        }}
       >
-        {/* Copy button, only visible on hover/focus */}
-        <button
-          type="button"
-          className="absolute top-1.5 right-2 p-1 rounded text-slate-400 dark:text-slate-500 hover:text-sky-500 dark:hover:text-sky-400 bg-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
-          style={{ fontSize: 16 }}
-          aria-label={isCopied ? 'Copied!' : 'Copy prompt'}
-          onClick={async (e) => {
-            e.stopPropagation();
-            if (textToCopy) {
-              await navigator.clipboard.writeText(textToCopy);
-              setCopiedPrompt(blockquoteKey);
-              setTimeout(() => setCopiedPrompt(null), 1200);
-            }
-          }}
-        >
-          {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-        </button>
-        {children}
-      </blockquote>
+        {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      </button>
     );
   }, [copiedPrompt]);
 
-  // Custom markdown components for ReactMarkdown
-  const markdownComponents = useCallback((message: Message) => ({
-    blockquote: (props: any) => {
-      const blockquoteMatches = (message.text.match(/^ *>+/gm) || []);
-      let blockquoteIndex = 0;
-      if (blockquoteMatches.length > 1) {
-        blockquoteIndex = blockquoteMatches.findIndex((_, i) => i === 0);
-      }
-      return <BlockquoteWithCopy {...props} messageId={message.id} blockquoteIndex={blockquoteIndex} />;
-    },
-    pre: ({ node, children, className, ...props }: any) => {
-      let rawText = "";
-      // Node-based extraction for code blocks
-      if (node && node.children && node.children.length > 0 && node.children[0].tagName === 'code') {
-        const codeNode = node.children[0];
-        if (codeNode.children && codeNode.children.length > 0) {
-          rawText = codeNode.children
-            .filter((childNode: any) => childNode.type === 'text')
-            .map((textNode: any) => textNode.value)
-            .join('');
-        }
-      }
-      // Fallback: extract from children using helper
-      if (!rawText && children) {
-        rawText = extractTextFromReactNode(children);
-      }
-      rawText = rawText.replace(/\n$/, "");
-      return (
-        <div className="relative group my-4 text-sm">
-          <pre
-            {...props}
-            className={cn("p-4 rounded-lg overflow-x-auto bg-muted text-muted-foreground font-mono", className)}
-          >
-            {children}
-          </pre>
-          {rawText && (
-            <button
-              onClick={async () => {
-                if (!rawText) return;
-                try {
-                  await navigator.clipboard.writeText(rawText);
-                  setCopiedPrompt(rawText + message.id);
-                  setTimeout(() => setCopiedPrompt(null), 2000);
-                } catch (err) {
-                  console.error('Failed to copy code: ', err);
-                  alert('Failed to copy code.');
-                }
-              }}
-              className="absolute top-2 right-2 p-1.5 rounded-md text-slate-500 hover:text-slate-700 \
-                         dark:text-slate-400 dark:hover:text-slate-200 \
-                         bg-slate-100/70 dark:bg-slate-800/70 hover:bg-slate-200/90 dark:hover:bg-slate-700/90\n                         opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus:ring-2 focus:ring-sky-500"
-              aria-label="Copy code"
-            >
-              {copiedPrompt === (rawText + message.id) ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </button>
-          )}
-        </div>
-      );
-    },
-    code({ node, inline, className, children, ...props }: any) {
-      if (inline) {
+  const markdownComponents = useCallback((message: Message) => {
+    let blockquoteIndex = 0;
+
+    return {
+      blockquote: ({ children, ...props }: any) => {
+        const key = `${message.id}-quote-${blockquoteIndex++}`;
+        const text = extractTextFromReactNode(children).trim();
+
         return (
-          <code
-            className={cn(
-              "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold text-muted-foreground",
-              className
-            )}
-            {...props}
-          >
+          <blockquote className="group relative" {...props}>
+            <CopyButton
+              copyKey={key}
+              text={text}
+              className="absolute right-2 top-2 bg-background/80 backdrop-blur"
+            />
             {children}
-          </code>
+          </blockquote>
         );
-      }
-      return <code className={cn(className, 'font-mono')} {...props}>{children}</code>;
-    }
-  }), [BlockquoteWithCopy, copiedPrompt]);
+      },
+      pre: ({ node, children, className, ...props }: any) => {
+        let rawText = "";
+        if (node?.children?.[0]?.tagName === 'code') {
+          rawText = node.children[0].children
+            ?.filter((childNode: any) => childNode.type === 'text')
+            .map((textNode: any) => textNode.value)
+            .join('') || "";
+        }
+        if (!rawText && children) {
+          rawText = extractTextFromReactNode(children);
+        }
+        rawText = rawText.replace(/\n$/, "");
+
+        return (
+          <div className="group relative my-4">
+            <pre
+              {...props}
+              className={cn("overflow-x-auto rounded-xl bg-muted p-4 text-sm text-foreground transition-colors duration-300", className)}
+            >
+              {children}
+            </pre>
+            {rawText && (
+              <CopyButton
+                copyKey={`${message.id}-code-${rawText}`}
+                text={rawText}
+                className="absolute right-2 top-2 bg-background/80 backdrop-blur"
+              />
+            )}
+          </div>
+        );
+      },
+      code({ inline, className, children, ...props }: any) {
+        if (inline) {
+          return (
+            <code
+              className={cn("rounded-md bg-muted px-1.5 py-0.5 font-mono text-sm", className)}
+              {...props}
+            >
+              {children}
+            </code>
+          );
+        }
+        return <code className={cn(className, 'font-mono')} {...props}>{children}</code>;
+      },
+    };
+  }, [CopyButton]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-4 space-y-4 sm:space-y-6 bg-background w-full max-w-[calc(100%-1rem)] sm:max-w-xl md:max-w-2xl mx-auto">
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={`flex ${message.type === "user" ? "justify-end" : "justify-start"} w-full`}
-        >
-          <Card
-            className={`max-w-[85%] sm:max-w-xl w-fit p-3 sm:p-4 text-sm sm:text-base font-light rounded-2xl shadow-md relative ${
-              message.type === "user"
-                ? "bg-primary text-primary-foreground rounded-br-md"
-                : message.type === "ai"
-                ? `bg-background border border-border text-foreground break-words hyphens-auto 
-                   prose prose-xs sm:prose-sm dark:prose-invert 
-                   prose-blockquote:border-sky-400 prose-blockquote:dark:border-sky-600 
-                   prose-blockquote:pl-3 sm:prose-blockquote:pl-4 prose-blockquote:py-0.5 
-                   prose-blockquote:bg-slate-50 prose-blockquote:dark:bg-slate-800/50 
-                   prose-blockquote:rounded-r-md prose-blockquote:not-italic
-                   dark:prose-headings:text-neutral-50
-                   dark:prose-p:text-neutral-50
-                   dark:prose-li:text-neutral-50
-                   dark:prose-strong:text-neutral-50
-                   dark:prose-code:text-neutral-50
-                   dark:prose-pre:text-neutral-50
-                   dark:prose-ul:text-neutral-50
-                   dark:prose-ol:text-neutral-50
-                   dark:prose-hr:border-slate-700
-                   dark:prose-table:text-neutral-50
-                   dark:prose-th:bg-slate-900
-                   dark:prose-th:text-neutral-50
-                   dark:prose-td:text-neutral-50
-                   dark:prose-thead:border-slate-700
-                   dark:prose-tbody:border-slate-700
-                   dark:prose-tr:border-slate-700
-                   dark:prose-img:border-slate-700
-                   dark:prose-video:border-slate-700
-                   dark:prose-figure:text-neutral-50
-                   dark:prose-figcaption:text-neutral-50`
-                : "bg-destructive/20 text-destructive"
-            }`}
-          >
-            {message.type === 'ai' ? (
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={markdownComponents(message)}
+    <div className="flex-1 overflow-y-auto bg-background">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-0">
+        {messages.map((message) => {
+          const isUser = message.type === "user";
+          const isError = message.type === "error";
+
+          return (
+            <article
+              key={message.id}
+              className={cn("group flex w-full gap-3 sm:gap-4", isUser && "justify-end")}
+            >
+              {!isUser && (
+                <div className={cn(
+                  "mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                  isError ? "bg-destructive/15 text-destructive" : "bg-foreground text-background"
+                )}>
+                  {isError ? "!" : "PT"}
+                </div>
+              )}
+              <div
+                className={cn(
+                  "min-w-0 max-w-[88%] text-[15px] leading-7 sm:max-w-[78%]",
+                  isUser
+                    ? "rounded-3xl bg-primary px-4 py-2.5 text-primary-foreground transition-colors duration-300"
+                    : isError
+                    ? "rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive font-medium transition-colors duration-300"
+                    : "flex-1 text-foreground"
+                )}
               >
-                {message.text}
-              </ReactMarkdown>
-            ) : (
-              <span className="whitespace-pre-wrap break-words hyphens-auto">{message.text}</span>
-            )}
-          </Card>
-        </div>
-      ))}
-      {streamingAI && (
-        <div className="flex justify-start w-full">
-          <Card className="max-w-[85%] sm:max-w-xl w-fit p-3 sm:p-4 text-sm sm:text-base font-light rounded-2xl shadow-md bg-background border border-border animate-pulse">
-            <span className="whitespace-pre-wrap">{streamingAI + (isLoading ? "\u258c" : "")}</span>
-          </Card>
-        </div>
-      )}
-      {isLoading && !streamingAI && messages.length > 0 && (
-        <div className="flex justify-start w-full">
-          <Card className="max-w-[85%] sm:max-w-xl w-fit p-3 sm:p-4 rounded-2xl border border-border shadow-md flex items-center gap-2">
-            <div className="w-2 h-2 bg-muted rounded-full animate-bounce" />
-            <div className="w-2 h-2 bg-muted rounded-full animate-bounce delay-100" />
-            <div className="w-2 h-2 bg-muted rounded-full animate-bounce delay-200" />
-          </Card>
-        </div>
-      )}
-      <div ref={chatEndRef} />
+                {message.type === 'ai' ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={markdownComponents(message)}
+                    className="prose prose-neutral max-w-none text-foreground prose-p:my-3 prose-headings:mb-3 prose-headings:mt-6 prose-pre:my-0 prose-blockquote:rounded-xl prose-blockquote:border-l-4 prose-blockquote:border-border prose-blockquote:bg-muted/60 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:not-italic dark:prose-invert"
+                  >
+                    {message.text}
+                  </ReactMarkdown>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {message.attachment && (
+                      <div className="flex max-w-xs items-center gap-2 rounded-xl border border-border/50 bg-background/50 p-2 pr-4 shadow-sm">
+                        {message.attachment.type.startsWith('image/') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={message.attachment.url} alt="Attachment" className="h-10 w-10 shrink-0 rounded object-cover" />
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted">
+                             <span className="text-[10px] font-bold text-sky-500 uppercase">PDF</span>
+                          </div>
+                        )}
+                        <span className="truncate text-sm font-medium text-foreground">{message.attachment.name}</span>
+                      </div>
+                    )}
+                    {message.text && <span className="whitespace-pre-wrap break-words">{message.text}</span>}
+                  </div>
+                )}
+              </div>
+            </article>
+          );
+        })}
+
+        {streamingAI && (
+          <article className="flex w-full gap-3 sm:gap-4">
+            <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background">
+              PT
+            </div>
+            <div className="min-w-0 flex-1 text-[15px] leading-7">
+              <span className="whitespace-pre-wrap">{streamingAI + (isLoading ? "\u258c" : "")}</span>
+            </div>
+          </article>
+        )}
+
+        {isLoading && !streamingAI && messages.length > 0 && (
+          <article className="flex w-full gap-3 sm:gap-4">
+            <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background">
+              PT
+            </div>
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 delay-100" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 delay-200" />
+            </div>
+          </article>
+        )}
+
+        <div ref={chatEndRef} />
+      </div>
     </div>
   );
 }
 
-export default React.memo(ChatArea); 
+export default React.memo(ChatArea);

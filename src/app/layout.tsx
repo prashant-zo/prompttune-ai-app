@@ -1,8 +1,7 @@
 // src/app/layout.tsx
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { AuthProvider } from '../contexts/AuthContext';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -30,10 +29,6 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
   },
   manifest: '/manifest.json',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
-  ],
   appleWebApp: {
     title: 'PromptTune',
     capable: true,
@@ -61,6 +56,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -70,9 +72,7 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       {/* Next.js automatically injects <head> elements from metadata. No manual <link> or <meta> tags for these here. */}
       <body className={`${inter.className} min-h-screen h-full font-sans antialiased bg-neutral-100 text-slate-900 dark:bg-black dark:text-neutral-50 transition-colors duration-300`}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

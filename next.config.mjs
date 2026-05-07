@@ -21,16 +21,6 @@ const nextConfig = {
         hostname: "firebasestorage.googleapis.com",
       },
     ],
-    dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "https://api.openai.com/:path*",
-      },
-    ];
   },
 };
 
