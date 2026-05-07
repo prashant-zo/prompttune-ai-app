@@ -29,6 +29,7 @@ import MessageInputComponent from "./components/MessageInput";
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Moon, Sparkles, Sun } from 'lucide-react';
 import { compressImage } from '../lib/image-utils';
+import Image from "next/image";
 
 type Message = {
   id: string;
@@ -497,8 +498,15 @@ function HomeContent() {
       <div className={`min-h-dvh bg-background text-foreground ${theme}`}>
         <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background">
-              <Sparkles className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl">
+              <Image
+                src="/icon0.svg"
+                alt="PromptTune logo"
+                width={36}
+                height={36}
+                className="h-full w-full object-cover"
+                priority
+              />
             </div>
             <span className="font-semibold">PromptTune</span>
           </div>
@@ -695,8 +703,15 @@ function HomeContent() {
             <section className="flex flex-1 flex-col justify-center overflow-y-auto px-4 py-6">
               <div className="mx-auto w-full max-w-3xl">
                 <div className="mb-8 text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background">
-                    <Sparkles className="h-5 w-5" />
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl">
+                    <Image
+                      src="/icon0.svg"
+                      alt="PromptTune logo"
+                      width={48}
+                      height={48}
+                      className="h-full w-full object-cover"
+                      priority
+                    />
                   </div>
                   <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
                     {user.displayName ? `Hi, ${user.displayName.split(' ')[0]}.` : 'Welcome to PromptTune.'}

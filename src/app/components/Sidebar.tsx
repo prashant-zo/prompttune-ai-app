@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { format } from "date-fns";
-import { Mail, MessageSquareText, Plus, Trash2, X } from "lucide-react";
+import { Mail, Plus, Trash2, X } from "lucide-react";
+import Image from "next/image";
 import React, { useCallback } from "react";
 
 interface ChatHistoryItem {
@@ -47,8 +48,15 @@ function Sidebar({
     <aside className="flex h-full w-72 flex-col border-r border-border/70 bg-muted/35 text-foreground transition-colors duration-300 dark:bg-neutral-950">
       <div className="flex h-14 items-center justify-between px-3">
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground text-background">
-            <MessageSquareText className="h-4 w-4" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+            <Image
+              src="/icon0.svg"
+              alt="PromptTune logo"
+              width={32}
+              height={32}
+              className="h-full w-full object-cover"
+              priority
+            />
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">PromptTune</p>
