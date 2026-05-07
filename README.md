@@ -1,6 +1,6 @@
 # PromptTune
 
-A modern, production-ready AI chat application built with Next.js 14 App Router, Vercel AI SDK, Firebase, and Tailwind CSS. PromptTune helps users craft exceptional prompts for a wide range of AI systems, with a focus on accessibility and professional UX.
+A modern AI chat application built with Next.js 14 App Router, Gemini, Firebase, and Tailwind CSS. PromptTune helps users craft exceptional prompts for a wide range of AI systems, with a focus on accessibility and professional UX.
 
 ## Features
 - AI chat with leveled prompt suggestions (Beginner, Intermediate, Advanced)
@@ -13,7 +13,7 @@ A modern, production-ready AI chat application built with Next.js 14 App Router,
 
 ## Tech Stack
 - [Next.js 14 (App Router)](https://nextjs.org/docs/app)
-- [Vercel AI SDK](https://sdk.vercel.ai/docs)
+- [Google Gemini](https://ai.google.dev/)
 - [Firebase (Auth, Firestore)](https://firebase.google.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Shadcn UI](https://ui.shadcn.com/)
@@ -43,8 +43,9 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
-LLM_API_KEY=your_LLM_api_key
-# Add any other required keys
+GEMINI_API_KEY=your_gemini_api_key
+# Optional: defaults to gemini-2.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### 4. Run the development server

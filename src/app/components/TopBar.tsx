@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { User } from "firebase/auth";
 import Link from "next/link";
-import { Menu, Moon, Sun, LogOut } from "lucide-react";
+import { LogOut, Menu, Moon, PanelLeftClose, Sun } from "lucide-react";
 import React from "react";
 
 interface TopBarProps {
@@ -16,79 +15,84 @@ interface TopBarProps {
   isSidebarOpen: boolean;
 }
 
-function TopBar({ 
-  user, 
-  authLoading, 
-  theme, 
-  onToggleTheme, 
+function TopBar({
+  user,
+  authLoading,
+  theme,
+  onToggleTheme,
   onToggleSidebar,
-  onSignOut 
+  onSignOut,
+  isSidebarOpen,
 }: TopBarProps) {
   return (
-    <header className="w-full h-16 flex items-center justify-between px-2 sm:px-4 md:px-6 bg-background border-b border-border shadow-sm fixed top-0 left-0 z-30">
-      <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-background/90 px-3 backdrop-blur-xl transition-colors duration-300 sm:px-5">
+      <div className="flex min-w-0 items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
-          aria-label="Toggle sidebar"
-          className="h-9 w-9 sm:h-10 sm:w-10"
+          aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          className="h-9 w-9 lg:hidden"
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <span className="font-bold text-base sm:text-lg tracking-tight">PromptTune</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleSidebar}
+          aria-label={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          className="hidden h-9 w-9 lg:inline-flex"
+        >
+          <PanelLeftClose className="h-5 w-5" />
+        </Button>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold leading-tight">PromptTune</p>
+          <p className="hidden text-xs text-muted-foreground sm:block">Prompt engineering assistant</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Theme Toggle */}
-        <Button 
-          size="icon" 
-          variant="ghost" 
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <Button
+          size="icon"
+          variant="ghost"
           onClick={onToggleTheme}
           aria-label="Toggle theme"
-          className="h-9 w-9 sm:h-10 sm:w-10"
+          className="h-9 w-9"
         >
-          {theme === 'light' ? (
-            <Moon className="h-5 w-5" />
-          ) : (
-            <Sun className="h-5 w-5" />
-          )}
+          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
 
-        {/* User Section */}
         {authLoading ? (
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="h-8 w-20 animate-pulse rounded-full bg-muted" />
         ) : user ? (
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-              <AvatarImage 
-                src={user.photoURL || undefined} 
-                alt={user.displayName || user.email || "User"} 
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Avatar className="h-8 w-8 border border-border">
+              <AvatarImage
+                src={user.photoURL || undefined}
+                alt={user.displayName || user.email || "User"}
               />
-              <AvatarFallback>
+              <AvatarFallback className="text-xs">
                 {user.displayName?.[0] || user.email?.[0] || "U"}
               </AvatarFallback>
             </Avatar>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onSignOut}
-              className="gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3"
+              aria-label="Log out"
+              className="h-9 w-9"
             >
               <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         ) : (
-          <Link href="/login">
-            <Button variant="default" className="h-8 sm:h-9 px-3 sm:px-4 text-sm sm:text-base">
-              Login / Sign Up
-            </Button>
-          </Link>
+          <Button asChild className="h-9 rounded-full px-4 text-sm">
+            <Link href="/login">Sign in</Link>
+          </Button>
         )}
       </div>
     </header>
   );
 }
 
-export default React.memo(TopBar); 
+export default React.memo(TopBar);

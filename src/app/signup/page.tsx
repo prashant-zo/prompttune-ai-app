@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
-import { useAuth } from '../../contexts/AuthContext';
+import { auth } from '../../lib/firebase-auth';
+import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 import Link from 'next/link';
 
-export default function SignUpPage() {
+function SignUpContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -103,9 +103,12 @@ export default function SignUpPage() {
   const isLoading = isCreatingAccount || isSendingVerification;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-900 rounded-xl shadow-2xl">
-        <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-slate-100">Create Account</h1>
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-muted/35 p-4">
+      <div className="w-full max-w-md rounded-[1.5rem] border border-border bg-background p-6 shadow-sm sm:p-8">
+        <div className="mb-7 text-center">
+          <h1 className="text-2xl font-semibold tracking-normal text-foreground">Create account</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Start saving and refining your prompt history.</p>
+        </div>
         <form onSubmit={handleEmailPasswordSignUp} className="space-y-4">
           <div>
             <input
@@ -113,7 +116,7 @@ export default function SignUpPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="Email address"
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-foreground"
               required
             />
           </div>
@@ -126,7 +129,7 @@ export default function SignUpPage() {
                 setPasswordError(validatePassword(e.target.value));
               }}
               placeholder="Password"
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-foreground"
               required
             />
             {passwordError && (
@@ -139,14 +142,14 @@ export default function SignUpPage() {
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               placeholder="Confirm Password"
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-foreground"
               required
             />
           </div>
           <button
             type="submit"
             disabled={isLoading || !!passwordError}
-            className="w-full py-3 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full rounded-xl bg-foreground py-3 font-medium text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isCreatingAccount ? 'Creating account...' : 
              isSendingVerification ? 'Sending verification email...' : 
@@ -154,11 +157,19 @@ export default function SignUpPage() {
           </button>
         </form>
         {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-        <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-sky-600 hover:text-sky-500">Login</Link>
+          <Link href="/login" className="font-medium text-foreground hover:underline">Login</Link>
         </p>
       </div>
     </div>
   );
-} 
+}
+
+export default function SignUpPage() {
+  return (
+    <AuthProvider>
+      <SignUpContent />
+    </AuthProvider>
+  );
+}
